@@ -546,67 +546,7 @@
 
     .input-card { animation-delay: 0.1s; }
 
-    /* ── API KEY NOTICE ── */
-    .api-notice {
-      background: rgba(232, 93, 4, 0.08);
-      border: 1px solid rgba(232, 93, 4, 0.3);
-      border-radius: 4px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.82rem;
-      color: #cc9;
-      line-height: 1.6;
-    }
 
-    .api-notice strong { color: var(--orange-lit); }
-
-    .api-key-row {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .api-key-row input {
-      flex: 1;
-      min-width: 220px;
-      background: var(--black);
-      border: 1px solid #555;
-      border-radius: 3px;
-      color: var(--cream);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.8rem;
-      padding: 0.5rem 0.75rem;
-      outline: none;
-    }
-
-    .api-key-row input:focus { border-color: var(--green-lit); }
-
-    .btn-save-key {
-      background: var(--green);
-      border: none;
-      border-radius: 3px;
-      color: var(--white);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-save-key:hover { background: var(--green-mid); }
-
-    .key-status {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.08em;
-    }
-
-    .key-status.set   { color: var(--green-lit); }
-    .key-status.unset { color: var(--gray-lit); }
 
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
@@ -628,17 +568,6 @@
   </header>
 
   <main>
-
-    <!-- API KEY NOTICE -->
-    <div class="api-notice" id="apiNotice">
-      <strong>Phase 2 Shell — API Key Required for Live Analysis</strong><br />
-      This tool is wired and ready. Enter your Anthropic API key below to activate live scoring. Your key is stored only in your browser session and never sent anywhere except the Anthropic API.
-      <div class="api-key-row">
-        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
-        <button class="btn-save-key" onclick="saveApiKey()">Save Key</button>
-        <span class="key-status unset" id="keyStatus">No key set</span>
-      </div>
-    </div>
 
     <!-- INPUT CARD -->
     <div class="input-card">
@@ -754,7 +683,7 @@
 
   <script>
     // ── STATE ──
-    let apiKey = '';
+    const PROXY_URL = 'https://climate-equity-simulator.onrender.com/analyze';
 
     const CATEGORIES = [
       { key: 'disability',   label: 'Disability Access'      },
@@ -763,20 +692,6 @@
       { key: 'envjustice',   label: 'Environmental Justice'  },
       { key: 'community',    label: 'Community Benefit'      },
     ];
-
-    // ── API KEY ──
-    function saveApiKey() {
-      const val = document.getElementById('apiKeyInput').value.trim();
-      if (!val.startsWith('sk-ant-')) {
-        document.getElementById('keyStatus').textContent = 'Invalid key format';
-        document.getElementById('keyStatus').className = 'key-status unset';
-        return;
-      }
-      apiKey = val;
-      document.getElementById('keyStatus').textContent = '✓ Key saved';
-      document.getElementById('keyStatus').className = 'key-status set';
-      document.getElementById('apiKeyInput').value = '••••••••••••••••';
-    }
 
     // ── ANALYSIS ──
     async function runAnalysis() {
