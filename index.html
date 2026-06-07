@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Climate Equity Policy Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black:     #0a0a0a;
+      --green:     #1a4a2e;
+      --green-mid: #2d7a4f;
+      --green-lit: #3dbd74;
+      --orange:    #e85d04;
+      --orange-lit:#ff7b2e;
+      --cream:     #f5f0e8;
+      --gray:      #2a2a2a;
+      --gray-mid:  #444;
+      --gray-lit:  #888;
+      --white:     #ffffff;
+      --red:       #c0392b;
+      --yellow:    #f39c12;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 3rem 2rem 2rem;
+      border-bottom: 2px solid var(--orange);
+      background: linear-gradient(180deg, #0f2018 0%, var(--black) 100%);
+      overflow: hidden;
+    }
+
+    header::after {
+      content: 'EQUITY';
+      position: absolute;
+      right: -1rem;
+      top: -1.5rem;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(6rem, 15vw, 14rem);
+      color: var(--green);
+      opacity: 0.08;
+      pointer-events: none;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+
+    h1 span {
+      color: var(--green-lit);
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--gray-lit);
+      max-width: 560px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      position: relative;
+      z-index: 10;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+    }
+
+    /* ── SECTION LABELS ── */
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── INPUT CARD ── */
+    .input-card {
+      background: var(--gray);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .input-card h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.05em;
+      color: var(--white);
+      margin-bottom: 1.5rem;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--black);
+      border: 1px solid #444;
+      border-radius: 3px;
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding: 1rem;
+      resize: vertical;
+      min-height: 120px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--green-lit);
+    }
+
+    textarea::placeholder { color: var(--gray-lit); }
+
+    /* ── DROPDOWNS ROW ── */
+    .dropdowns {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .field-group label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gray-lit);
+      margin-bottom: 0.4rem;
+    }
+
+    select {
+      width: 100%;
+      background: var(--black);
+      border: 1px solid #444;
+      border-radius: 3px;
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2.2rem;
+    }
+
+    select:focus { border-color: var(--green-lit); }
+
+    /* ── ANALYZE BUTTON ── */
+    .btn-analyze {
+      margin-top: 1.75rem;
+      width: 100%;
+      background: var(--orange);
+      color: var(--white);
+      border: none;
+      border-radius: 3px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      padding: 0.9rem 2rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-analyze:hover { background: var(--orange-lit); transform: translateY(-1px); }
+    .btn-analyze:active { transform: translateY(0); }
+
+    .btn-analyze:disabled {
+      background: var(--gray-mid);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── LOADING STATE ── */
+    .loading-bar {
+      display: none;
+      height: 3px;
+      background: var(--gray);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+
+    .loading-bar.active { display: block; }
+
+    .loading-bar::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, var(--green-lit), var(--orange));
+      animation: slide 1.2s ease-in-out infinite;
+      border-radius: 2px;
+    }
+
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+
+    .loading-text {
+      display: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--gray-lit);
+      text-align: center;
+      margin-top: 0.75rem;
+      letter-spacing: 0.1em;
+    }
+
+    .loading-text.active { display: block; }
+
+    /* ── RESULTS PANEL ── */
+    #results {
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    #results.visible { display: block; }
+
+    /* ── OVERALL SCORE ── */
+    .score-hero {
+      background: linear-gradient(135deg, #0f2018 0%, #1a1a1a 100%);
+      border: 1px solid var(--green-mid);
+      border-radius: 4px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .score-circle {
+      flex-shrink: 0;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid var(--green-lit);
+      position: relative;
+    }
+
+    .score-circle .score-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      line-height: 1;
+      color: var(--white);
+    }
+
+    .score-circle .score-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gray-lit);
+      margin-top: 2px;
+    }
+
+    .score-hero-text h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.04em;
+      color: var(--white);
+      margin-bottom: 0.4rem;
+    }
+
+    .score-hero-text p {
+      font-size: 0.9rem;
+      color: var(--gray-lit);
+      line-height: 1.6;
+      max-width: 480px;
+    }
+
+    /* ── CATEGORY SCORES ── */
+    .categories {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cat-card {
+      background: var(--gray);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 1.25rem;
+      border-left: 3px solid transparent;
+      transition: border-color 0.3s;
+    }
+
+    .cat-card.score-high  { border-left-color: var(--green-lit); }
+    .cat-card.score-mid   { border-left-color: var(--yellow); }
+    .cat-card.score-low   { border-left-color: var(--red); }
+
+    .cat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .cat-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cream);
+    }
+
+    .cat-score-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .score-high .cat-score-badge { color: var(--green-lit); }
+    .score-mid  .cat-score-badge { color: var(--yellow); }
+    .score-low  .cat-score-badge { color: var(--red); }
+
+    .cat-bar-track {
+      height: 4px;
+      background: #1a1a1a;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    .cat-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    .score-high .cat-bar-fill { background: var(--green-lit); }
+    .score-mid  .cat-bar-fill { background: var(--yellow); }
+    .score-low  .cat-bar-fill { background: var(--red); }
+
+    .cat-note {
+      font-size: 0.8rem;
+      color: var(--gray-lit);
+      line-height: 1.5;
+    }
+
+    /* ── EQUITY BRIEF ── */
+    .brief-card {
+      background: var(--gray);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .brief-card h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+
+    .brief-text {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      color: var(--cream);
+      font-weight: 300;
+    }
+
+    .brief-text p + p { margin-top: 1rem; }
+
+    /* ── FLAGS & RECOMMENDATIONS ── */
+    .flags-card {
+      background: var(--gray);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .flags-card h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      color: var(--white);
+      margin-bottom: 1.25rem;
+    }
+
+    .flag-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #333;
+    }
+
+    .flag-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .flag-icon {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 1px;
+    }
+
+    .flag-icon.warn  { background: rgba(243,156,18,0.15); color: var(--yellow); }
+    .flag-icon.good  { background: rgba(61,189,116,0.15); color: var(--green-lit); }
+    .flag-icon.alert { background: rgba(192,57,43,0.15);  color: var(--red); }
+
+    .flag-content strong {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--white);
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+
+    .flag-content span {
+      font-size: 0.8rem;
+      color: var(--gray-lit);
+      line-height: 1.5;
+    }
+
+    /* ── RESET BUTTON ── */
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--gray-mid);
+      color: var(--gray-lit);
+      border-radius: 3px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-reset:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    /* ── ERROR STATE ── */
+    .error-card {
+      display: none;
+      background: rgba(192,57,43,0.1);
+      border: 1px solid var(--red);
+      border-radius: 4px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #e88;
+      line-height: 1.5;
+    }
+
+    .error-card.visible { display: block; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid #222;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #444;
+    }
+
+    footer a { color: var(--green-lit); text-decoration: none; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-card { animation-delay: 0.1s; }
+
+    /* ── API KEY NOTICE ── */
+    .api-notice {
+      background: rgba(232, 93, 4, 0.08);
+      border: 1px solid rgba(232, 93, 4, 0.3);
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.82rem;
+      color: #cc9;
+      line-height: 1.6;
+    }
+
+    .api-notice strong { color: var(--orange-lit); }
+
+    .api-key-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .api-key-row input {
+      flex: 1;
+      min-width: 220px;
+      background: var(--black);
+      border: 1px solid #555;
+      border-radius: 3px;
+      color: var(--cream);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      padding: 0.5rem 0.75rem;
+      outline: none;
+    }
+
+    .api-key-row input:focus { border-color: var(--green-lit); }
+
+    .btn-save-key {
+      background: var(--green);
+      border: none;
+      border-radius: 3px;
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-save-key:hover { background: var(--green-mid); }
+
+    .key-status {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+    }
+
+    .key-status.set   { color: var(--green-lit); }
+    .key-status.unset { color: var(--gray-lit); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      header, main { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .score-hero { flex-direction: column; gap: 1.25rem; }
+      .score-circle { width: 90px; height: 90px; }
+      .score-circle .score-num { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <p class="eyebrow">Civic Tech · Philadelphia · Climate Justice</p>
+      <h1>Climate Equity<br /><span>Policy Simulator</span></h1>
+      <p class="subtitle">Submit a climate policy proposal. Get an AI-powered equity analysis across disability access, transit, heat vulnerability, environmental justice, and community benefit.</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- API KEY NOTICE -->
+    <div class="api-notice" id="apiNotice">
+      <strong>Phase 2 Shell — API Key Required for Live Analysis</strong><br />
+      This tool is wired and ready. Enter your Anthropic API key below to activate live scoring. Your key is stored only in your browser session and never sent anywhere except the Anthropic API.
+      <div class="api-key-row">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+        <button class="btn-save-key" onclick="saveApiKey()">Save Key</button>
+        <span class="key-status unset" id="keyStatus">No key set</span>
+      </div>
+    </div>
+
+    <!-- INPUT CARD -->
+    <div class="input-card">
+      <p class="section-label">Step 1 — Describe Your Policy</p>
+      <h2>What's the Proposal?</h2>
+
+      <textarea
+        id="policyInput"
+        placeholder="Example: Expand protected bike lanes along Broad Street from City Hall to South Philadelphia, with ADA-compliant intersections and real-time SEPTA connection signage..."
+        rows="5"
+      ></textarea>
+
+      <div class="dropdowns">
+        <div class="field-group">
+          <label for="neighborhoodSelect">Neighborhood / Area</label>
+          <select id="neighborhoodSelect">
+            <option value="">Citywide / Unspecified</option>
+            <option>North Philadelphia</option>
+            <option>West Philadelphia</option>
+            <option>South Philadelphia</option>
+            <option>Kensington</option>
+            <option>Germantown</option>
+            <option>Frankford</option>
+            <option>Fishtown / Norris Square</option>
+            <option>Southwest Philadelphia</option>
+            <option>Northeast Philadelphia</option>
+            <option>Center City</option>
+            <option>Roxborough / Manayunk</option>
+            <option>Other Philadelphia Neighborhood</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="policyType">Policy Type</label>
+          <select id="policyType">
+            <option value="">Select type...</option>
+            <option>Transit &amp; Mobility</option>
+            <option>Green Infrastructure</option>
+            <option>Energy &amp; Buildings</option>
+            <option>Housing &amp; Land Use</option>
+            <option>Heat Resilience</option>
+            <option>Environmental Justice</option>
+            <option>Parks &amp; Open Space</option>
+            <option>Stormwater &amp; Flooding</option>
+            <option>Air Quality</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="policyScale">Scale</label>
+          <select id="policyScale">
+            <option value="">Select scale...</option>
+            <option>Single Block / Site</option>
+            <option>Corridor</option>
+            <option>Neighborhood</option>
+            <option>District / Council District</option>
+            <option>Citywide</option>
+            <option>Regional</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">
+        Analyze for Equity →
+      </button>
+
+      <div class="loading-bar" id="loadingBar"></div>
+      <div class="loading-text" id="loadingText">Scoring equity dimensions...</div>
+      <div class="error-card" id="errorCard"></div>
+    </div>
+
+    <!-- RESULTS PANEL -->
+    <div id="results">
+
+      <!-- OVERALL SCORE -->
+      <div class="score-hero">
+        <div class="score-circle" id="scoreCircle">
+          <span class="score-num" id="overallScoreNum">--</span>
+          <span class="score-label">/ 100</span>
+        </div>
+        <div class="score-hero-text">
+          <h3 id="scoreSummaryTitle">Overall Equity Score</h3>
+          <p id="scoreSummaryText">—</p>
+        </div>
+      </div>
+
+      <!-- CATEGORY SCORES -->
+      <p class="section-label">Equity Dimensions</p>
+      <div class="categories" id="categoriesGrid">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- EQUITY BRIEF -->
+      <div class="brief-card">
+        <h3>Equity Brief</h3>
+        <div class="brief-text" id="equityBriefText">—</div>
+      </div>
+
+      <!-- FLAGS & RECOMMENDATIONS -->
+      <div class="flags-card">
+        <h3>Flags &amp; Recommendations</h3>
+        <div id="flagsList">—</div>
+      </div>
+
+      <button class="btn-reset" onclick="resetTool()">← Analyze Another Policy</button>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>Climate Equity Policy Simulator · Built by <a href="https://github.com/meyeringn" target="_blank">@meyeringn</a> · Philadelphia · Part of the <a href="https://github.com/meyeringn" target="_blank">Vibe Coding for Climate Action</a> portfolio</p>
+  </footer>
+
+  <script>
+    // ── STATE ──
+    let apiKey = '';
+
+    const CATEGORIES = [
+      { key: 'disability',   label: 'Disability Access'      },
+      { key: 'transit',      label: 'Transit Equity'         },
+      { key: 'heat',         label: 'Heat Vulnerability'      },
+      { key: 'envjustice',   label: 'Environmental Justice'  },
+      { key: 'community',    label: 'Community Benefit'      },
+    ];
+
+    // ── API KEY ──
+    function saveApiKey() {
+      const val = document.getElementById('apiKeyInput').value.trim();
+      if (!val.startsWith('sk-ant-')) {
+        document.getElementById('keyStatus').textContent = 'Invalid key format';
+        document.getElementById('keyStatus').className = 'key-status unset';
+        return;
+      }
+      apiKey = val;
+      document.getElementById('keyStatus').textContent = '✓ Key saved';
+      document.getElementById('keyStatus').className = 'key-status set';
+      document.getElementById('apiKeyInput').value = '••••••••••••••••';
+    }
+
+    // ── ANALYSIS ──
+    async function runAnalysis() {
+      const policy    = document.getElementById('policyInput').value.trim();
+      const area      = document.getElementById('neighborhoodSelect').value;
+      const pType     = document.getElementById('policyType').value;
+      const scale     = document.getElementById('policyScale').value;
+
+      if (!policy) {
+        showError('Please describe a policy proposal before analyzing.');
+        return;
+      }
+      if (!apiKey) {
+        showError('Please enter your Anthropic API key above to run live analysis.');
+        return;
+      }
+
+      setLoading(true);
+      hideError();
+      document.getElementById('results').classList.remove('visible');
+
+      const systemPrompt = buildSystemPrompt();
+      const userPrompt   = buildUserPrompt(policy, area, pType, scale);
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1500,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userPrompt }],
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error?.message || `API error ${response.status}`);
+        }
+
+        const data = await response.json();
+        const text = data.content.map(b => b.text || '').join('');
+        const parsed = parseResult(text);
+        renderResults(parsed);
+
+      } catch (err) {
+        showError(`Analysis failed: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ── PROMPTS ──
+    function buildSystemPrompt() {
+      return `You are a climate equity policy analyst specializing in Philadelphia, Pennsylvania.
+You evaluate climate and sustainability policy proposals through five equity lenses:
+1. Disability Access — Does the policy improve or risk worsening access for Disabled people? Consider mobility, sensory, cognitive access, ADA compliance, curb cuts, transit stop accessibility, cooling center proximity.
+2. Transit Equity — Does it improve SEPTA access or transit alternatives for transit-dependent residents? Consider low-income riders, car-free households, SEPTA coverage gaps.
+3. Heat Vulnerability — Does it reduce heat risk for vulnerable populations? Consider heat island effect, green cover, cooling access, outdoor workers, elderly residents.
+4. Environmental Justice — Does it address disproportionate environmental burdens on low-income and communities of color? Consider EPA EJScreen data, proximity to pollution sources, historical disinvestment.
+5. Community Benefit — Does it create tangible, lasting benefit for existing residents? Consider anti-displacement, jobs, health outcomes, community control.
+
+Philadelphia-specific context you must use:
+- SEPTA serves ~300K daily riders; transit deserts exist in parts of Northeast Philly, Southwest Philly, and parts of West Philadelphia
+- Philadelphia has one of the highest poverty rates of any major US city (~23%)
+- Heat mortality risk is concentrated in North and West Philadelphia where tree canopy is lowest
+- Philadelphia's Disabled population is approximately 14% of residents; SEPTA's elevator/escalator reliability is a documented barrier
+- Environmental justice communities include Kensington, Fairhill, Point Breeze, Grays Ferry, and parts of North Philly near the former PES refinery site
+
+IMPORTANT: Always respond with valid JSON only. No prose before or after. No markdown code fences. Return this exact structure:
+{
+  "overall_score": <integer 0-100>,
+  "summary_title": "<5-8 word verdict>",
+  "summary_text": "<2 sentence overall assessment>",
+  "categories": {
+    "disability":  { "score": <0-100>, "note": "<1-2 sentences>" },
+    "transit":     { "score": <0-100>, "note": "<1-2 sentences>" },
+    "heat":        { "score": <0-100>, "note": "<1-2 sentences>" },
+    "envjustice":  { "score": <0-100>, "note": "<1-2 sentences>" },
+    "community":   { "score": <0-100>, "note": "<1-2 sentences>" }
+  },
+  "brief": ["<paragraph 1>", "<paragraph 2>", "<paragraph 3>"],
+  "flags": [
+    { "type": "good|warn|alert", "title": "<flag title>", "detail": "<1-2 sentences>" }
+  ]
+}`;
+    }
+
+    function buildUserPrompt(policy, area, pType, scale) {
+      let context = '';
+      if (area)  context += `\nNeighborhood/Area: ${area}`;
+      if (pType) context += `\nPolicy Type: ${pType}`;
+      if (scale) context += `\nScale: ${scale}`;
+      return `Please analyze this climate policy proposal for equity:
+
+"${policy}"${context}
+
+Return your equity analysis as JSON only.`;
+    }
+
+    // ── PARSE RESULT ──
+    function parseResult(text) {
+      try {
+        const clean = text.replace(/```json|```/g, '').trim();
+        return JSON.parse(clean);
+      } catch {
+        throw new Error('Could not parse AI response. The analysis may have been too long — try a shorter policy description.');
+      }
+    }
+
+    // ── RENDER RESULTS ──
+    function renderResults(data) {
+      // Overall score
+      document.getElementById('overallScoreNum').textContent = data.overall_score ?? '--';
+      document.getElementById('scoreSummaryTitle').textContent = data.summary_title ?? 'Equity Analysis';
+      document.getElementById('scoreSummaryText').textContent = data.summary_text ?? '';
+
+      // Color the circle
+      const circle = document.getElementById('scoreCircle');
+      const s = data.overall_score ?? 0;
+      circle.style.borderColor = s >= 70 ? 'var(--green-lit)' : s >= 40 ? 'var(--yellow)' : 'var(--red)';
+
+      // Categories
+      const grid = document.getElementById('categoriesGrid');
+      grid.innerHTML = '';
+      CATEGORIES.forEach(cat => {
+        const catData = data.categories?.[cat.key] ?? { score: 0, note: '' };
+        const score = catData.score ?? 0;
+        const tier  = score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low';
+        grid.innerHTML += `
+          <div class="cat-card score-${tier}">
+            <div class="cat-header">
+              <span class="cat-name">${cat.label}</span>
+              <span class="cat-score-badge">${score}</span>
+            </div>
+            <div class="cat-bar-track">
+              <div class="cat-bar-fill" style="width:${score}%"></div>
+            </div>
+            <p class="cat-note">${catData.note ?? ''}</p>
+          </div>`;
+      });
+
+      // Brief
+      const briefEl = document.getElementById('equityBriefText');
+      if (Array.isArray(data.brief)) {
+        briefEl.innerHTML = data.brief.map(p => `<p>${p}</p>`).join('');
+      } else {
+        briefEl.innerHTML = `<p>${data.brief ?? ''}</p>`;
+      }
+
+      // Flags
+      const flagsEl = document.getElementById('flagsList');
+      if (Array.isArray(data.flags) && data.flags.length) {
+        flagsEl.innerHTML = data.flags.map(f => {
+          const icon = f.type === 'good' ? '✓' : f.type === 'alert' ? '!' : '⚠';
+          return `
+            <div class="flag-item">
+              <div class="flag-icon ${f.type}">${icon}</div>
+              <div class="flag-content">
+                <strong>${f.title ?? ''}</strong>
+                <span>${f.detail ?? ''}</span>
+              </div>
+            </div>`;
+        }).join('');
+      } else {
+        flagsEl.innerHTML = '<p style="color:var(--gray-lit);font-size:.85rem;">No specific flags returned.</p>';
+      }
+
+      document.getElementById('results').classList.add('visible');
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── UI HELPERS ──
+    function setLoading(on) {
+      document.getElementById('analyzeBtn').disabled = on;
+      document.getElementById('analyzeBtn').textContent = on ? 'Analyzing...' : 'Analyze for Equity →';
+      document.getElementById('loadingBar').classList.toggle('active', on);
+      document.getElementById('loadingText').classList.toggle('active', on);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorCard');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+
+    function hideError() {
+      document.getElementById('errorCard').classList.remove('visible');
+    }
+
+    function resetTool() {
+      document.getElementById('results').classList.remove('visible');
+      document.getElementById('policyInput').value = '';
+      document.getElementById('neighborhoodSelect').selectedIndex = 0;
+      document.getElementById('policyType').selectedIndex = 0;
+      document.getElementById('policyScale').selectedIndex = 0;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+
+</body>
+</html>
